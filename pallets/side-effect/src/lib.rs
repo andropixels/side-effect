@@ -2,18 +2,16 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-
-pub use frame_system::pallet::*; 
-
+// pub use frame_system::pallet::*; 
 
 
+#[cfg(test)]
+mod mock;
 
+#[cfg(test)]
+mod tests;
 
 pub mod types {
-
-
-    // use bytes::{Bytes, BytesMut, Buf, BufMut};
-
 
     use codec::{Decode, Encode};
     use frame_support::traits::Currency;
@@ -25,6 +23,7 @@ pub mod types {
     use scale_info::TypeInfo;
     use sp_core::Get;
     use sp_runtime::RuntimeDebug;
+    use sp_core::crypto::AccountId32;
 
     use crate::pallet::Config as PalletConfig;
 
@@ -32,83 +31,73 @@ pub mod types {
     pub type TargetId = [u8; 4];
     pub type AccountIdOf<T> = <T as frame_system::Config>::AccountId; 
     // type BalanceOf<T:Config> = Currency<<T as frame_system::Config>::AccountId>>::Balance;
-	pub type BalanceOf<T> = <<T as PalletConfig>::TestCurrency as Currency<<T as frame_system::Config>::AccountId>>::Balance; 
+	// pub type BalanceOf<T> = <<T as PalletConfig>::TestCurrency as Currency<<T as frame_system::Config>::AccountId>>::Balance; 
     pub type Bytes = Vec<u8>; 
-    pub type SideEffectId<T> = <T as frame_system::Config>::Hash; 
-    #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, MaxEncodedLen,TypeInfo, Default)]
-    #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-    pub struct SideEffect<BoundedArguments> {
-        pub id:TargetId,
-        pub chain:ChainId,
-        args:BoundedArguments,
-   
-        
 
-        
-    }
+    pub type SideEffectId<T> = <T as sp_core::Hasher>::Out; 
+    pub type SideEffectIdHash<T> = <T as frame_system::Config>::Hash;
+
+    type BlockNumber = u64;
+    type BalanceOf = u128;
+    type AccountId = AccountId32;
+    type Hash = [u8; 32];
 
 
-#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, MaxEncodedLen,TypeInfo, Default)]
-#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-pub struct SideEffectInterfaceTest<T, S:Get<u32>> {
-
-    id:TargetId, 
-    chain:ChainId, 
-    args:BoundedVec<T,S>
-}
-
-#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, MaxEncodedLen,TypeInfo, Default)]
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, MaxEncodedLen,TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 
 pub struct SideEffectInterface<S:Get<u32>> {
 
-    id:TargetId, 
-    chain:ChainId, 
-    // args:BoundedVec<T,S>,
-    args:BoundedVec<Vec<Vec<u8>>,S>
+    pub(crate) id:TargetId, 
+    pub (crate) chain:ChainId, 
+   
+    pub (crate) args:BoundedVec<Vec<Vec<u8>>,S>
 }
 
-// impl<T, S:Get<u32>> SideEffectInterface<T,S>{
+impl<S:Get<u32>> Default for SideEffectInterface<S> {
 
-//     pub fn add(&mut self,encoded_data:T) {
+fn default() -> Self {
+    let id:TargetId = [1,0,0,1]; 
+    let args = BoundedVec::default(); 
+    Self { id, chain:ChainId::Polkadot, args }
+}
 
-//          self.args.try_push(encoded_data);
+}
 
-//     }
-// }
+impl<S:Get<u32>> SideEffectInterface<S> {
 
-impl<S:Get<u32> + frame_system::Config + PalletConfig > TryFrom<Vec<u8>> for SideEffectInterface<S> {
+    pub fn generate_id<Hasher: sp_core::Hasher>(&self) -> <Hasher as sp_core::Hasher>::Out {
+        Hasher::hash(Encode::encode(self).as_ref())
+    }
+
+    pub fn id_as_bytes<Hasher: sp_core::Hasher>(&self,id: <Hasher as sp_core::Hasher>::Out) -> Bytes {
+        id.as_ref().to_vec()
+    }
+}
+
+impl<S:Get<u32> > TryFrom<Vec<u8>> for SideEffectInterface<S> {
 
 type Error = &'static str;
 
 fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
     
     let mut bytes: VecDeque<u8> = value.into();
-    let mut take_next = || bytes.pop_front().ok_or("no more bytes");
+    let mut take_next = || bytes.pop_back().ok_or("no more bytes");
     let target: TargetId = TargetByte(take_next()?).try_into()?;
     let action = Action::try_from(take_next()?)?;
     let mut  bytes: Vec<u8> = bytes.into();
-    let args = extract_args::<<S as frame_system::Config>::AccountId,BalanceOf<S>, [u8; 32],S>(
+
+
+    let args = extract_args::<AccountId,BalanceOf, Hash,S>(
         &action,
         &mut bytes::Bytes::from(bytes),
     )?;
-
-    // let mut my_vec: BoundedVec<Vec<Bytes>, <T as PalletConfig>::StringLimit> = Default::default(); 
-    // let mut my_vec: BoundedVec<T, S> = Default::default(); 
-
-
-    // let mut vev = BoundedVec::try_push(my_vec); 
-    // my_vec.try_push(args); 
 
     let mut side_effect = SideEffectInterface{
         id:target, 
         chain:ChainId::Polkadot, 
         args:args
     };
-
-    // side_effect.add(args); 
-
-
 
     Ok(side_effect)
 
@@ -118,57 +107,6 @@ fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
 }
 
 
-
-
-
-//     impl<BoundedArguments: Zero+Copy  + Encode + Decode + MaxEncodedLen,T:frame_system::Config + PalletConfig+Zero> TryFrom<Vec<u8>> for SideEffect<BoundedArguments,T> {
-//         type Error = &'static str;
-
-//         fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
-//         let mut bytes: VecDeque<u8> = value.into();
-//         let mut take_next = || bytes.pop_front().ok_or("no more bytes");
-//         let target: TargetId = TargetByte(take_next()?).try_into()?;
-//         let action = Action::try_from(take_next()?)?;
-//         let mut  bytes: Vec<u8> = bytes.into();
-//         // let args = extract_args::<<T as frame_system::Config>::AccountId,BalanceOf<T>, [u8; 32],T>(
-//         //     &action,
-//         //     &mut bytes::Bytes::from(bytes),
-//         // )?;
-
-
-//         // let mut my_vec: BoundedVec<Vec<Bytes>, <T as PalletConfig>::StringLimit> = Default::default(); 
-
-//         // // let mut vev = BoundedVec::try_push(my_vec); 
-//         // my_vec.try_push(args); 
-
-//         // let mut myb_vec= BoundedVec::from_vec
-//         // my_vec.push(bytes);
-
-//         // let action_bytes: [u8; 4] = action.into();
-//         // let action_bytes = action_bytes.encode();
-
-//         // let bounded_vec = BoundedVec
-// /*
-//    pub id:TargetId,
-//         pub chain:ChainId,
-//         args:BoundedArguments,
-//         test:T
-
-// */
-//         Ok(SideEffect {
-//             id:target,
-//             chain:ChainId::Polkadot,
-//             args: Zero::zero(),
-//             test:Zero::zero()
-    
-//         })
-
-
-
-//     }
-//     }
-
-
 pub struct TargetByte(pub u8);
 
 impl TryInto<TargetId> for TargetByte {
@@ -176,9 +114,9 @@ impl TryInto<TargetId> for TargetByte {
 
     fn try_into(self) -> Result<TargetId, Self::Error> {
         match self.0 {
-            0 => Ok(*b"ksma"),
-            1 => Ok(*b"pdot"),
-            2 => Ok(*b"karu"),
+            0 => Ok(*b"pdot"),
+            1 => Ok(*b"karu"),
+            2 => Ok(*b"ksma"),
             3 => Ok(*b"t3rn"),
             _ => Err("Invalid target Id"),
         }
@@ -223,7 +161,7 @@ impl TryFrom<u8> for Action {
         match value {
             0 => Ok(Action::Transfer),
             1 => Ok(Action::TransferMulti),
-            3 => Ok(Action::Swap),
+            2 => Ok(Action::Swap),
             _ => Err("Invalid action id"),
         }
     }
@@ -240,11 +178,6 @@ impl Into<[u8; 4]> for Action {
         }
     }
 }
-
-
-
-
-
 
 
 pub fn extract_args<
@@ -314,57 +247,70 @@ pub fn extract_args<
 
   #[frame_support::pallet] 
   pub mod pallet {
-    use codec::{Encode, Decode};
-    use frame_support::pallet_prelude::*;
+    use codec::{Encode, Decode, EncodeLike};
+    use frame_support::{pallet_prelude::{*, OptionQuery, ValueQuery, StorageValue, StorageDoubleMap}, Blake2_128Concat, Blake2_128,debug};
 	use frame_system::pallet_prelude::*;
+    pub type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 
     use frame_support::{pallet_prelude::MaxEncodedLen, BoundedVec};
     use scale_info::TypeInfo;
-    use frame_support::traits::{WithdrawReasons, Currency, EnsureOrigin, GenesisBuild};
-    use scale_info::prelude::collections::VecDeque;
-    
+    // use frame_support::traits::{WithdrawReasons, Currency, EnsureOrigin, GenesisBuild};
 
     use super::*; 
 
     #[pallet::config]
-    pub trait Config :frame_system::Config +Encode +Decode + TypeInfo + MaxEncodedLen +Default +Get<u32>{
+    pub trait Config :frame_system::Config {
 
         type RuntimeEvent : From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;  
-        type PCurrency : Currency<Self::AccountId>; 
-        type Type:Encode+Decode+MaxEncodedLen+Eq+PartialEq+Clone+Default+TypeInfo;
-        type StringLimit:Get<u32>; 
-        type TestCurrency:Currency<Self::AccountId>; 
+        
+		#[pallet::constant]
+        type StringLimit:Get<u32> +Encode +Decode + TypeInfo + MaxEncodedLen +Default; 
+   
+        
+        
+        
 
 
     }
 
 //   pub  type BalanceOf<T:Config> = <<T as Config>::PCurrency as Currency<<T as frame_system::Config>::AccountId>>::Balance ; 
 
-  
-
-
 //   pub type SideEffectOf<T> = SideEffectInterface<<T as Config>::StringLimit>; 
 
 
 
-// pub type SideEffectOf<T:Config> = SideEffectInterface<<T as Config>::StringLimit>; 
-
-
-pub type SideEffectOf<T> = SideEffect<BoundedVec<u8, <T as Config>::StringLimit>>; 
+pub type SideEffectInterfaceOf<T> = SideEffectInterface<<T as Config>::StringLimit>; 
 
     #[pallet::pallet]
+    #[pallet::without_storage_info]
     #[pallet::generate_store(pub(super) trait Store)]
     pub struct Pallet<T>(_); 
 
-
     #[pallet::event]
-    #[pallet::generate_deposit(pub(super) fn deposit_event)]
-    pub enum Event<T:Config> {
+	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	pub enum Event<T: Config> {
+		/// Event documentation should end with an array that provides descriptive names for event
+		/// parameters. [something, who]
+        SideEffectCommited(T::AccountId,Vec<u8>),
+        SideEffectReverted(T::AccountId,Vec<u8>),
 
+	}
+
+    #[pallet::error]
+    pub enum Error<T>{
+
+        /// if the sideEffect is already commited
+        SideEffectAlreadyPresent,
+        SideEffectDoesNotExist,
     }
 
-    #[pallet::storage]
-    pub type SideEffectStorage<T:Config> = StorageMap<_,Blake2_128Concat,SideEffectId<T>,SideEffectOf<T>, ValueQuery>; 
+
+type SideId = Vec<u8>; 
+
+
+#[pallet::storage]
+pub type SideEffectStorage<T:Config > = StorageDoubleMap<_,Blake2_128,T::AccountId,Blake2_128,SideId,SideEffectInterfaceOf<T>,ValueQuery>; 
+
 
 
 
@@ -374,67 +320,47 @@ pub type SideEffectOf<T> = SideEffect<BoundedVec<u8, <T as Config>::StringLimit>
 
         #[pallet::weight(0)]
         pub fn commit_side_effect(origin:OriginFor<T>,value:Vec<u8>) -> DispatchResult{
+            let  who = ensure_signed(origin)?; 
 
-        // let mut bytes: VecDeque<u8> = value.into();
-        // let mut take_next = || bytes.pop_front().ok_or("no more bytes");
-        // let target: TargetId = TargetByte(take_next()?).try_into()?;
-        // let action = Action::try_from(take_next()?)?;
-        // let mut  bytes: Vec<u8> = bytes.into();
-        // let args = extract_args::<<T as frame_system::Config>::AccountId,BalanceOf<T>, [u8; 32],<T as Config>::StringLimit>(
-        //     &action,
-        //     &mut bytes::Bytes::from(bytes),
-        // )?;
+            let sn:SideEffectInterface<<T as Config>::StringLimit> = SideEffectInterface::try_from(value).unwrap(); 
 
 
-        // // let mut my_vec: BoundedVec<Vec<Bytes>, <T as Config>::StringLimit> = Default::default(); 
 
-        // // // let mut vev = BoundedVec::try_push(my_vec); 
-        // // my_vec.try_push(args); 
+            let id = sn.generate_id::<SystemHashing<T>>(); 
+            // let id_to_vec = sn.id_as_bytes::<T::hasher>(id);
+            let id_to_vec = id.as_ref().to_vec(); 
 
-        // // let mut myb_vec= BoundedVec::from_vec
-        // // my_vec.push(bytes);
+            ensure!(!SideEffectStorage::<T>::contains_key(&who, &id_to_vec), Error::<T>::SideEffectAlreadyPresent);
 
-        // let action_bytes: [u8; 4] = action.into();
-        // let action_bytes = action_bytes.encode();
+            SideEffectStorage::<T>::insert(who.clone(),id_to_vec.clone(),sn );
 
-        let sn:SideEffectInterface<T> = SideEffectInterface::try_from(value).unwrap(); 
+            
 
-// 
+            Self::deposit_event(Event::SideEffectCommited(who, id_to_vec));
 
-        // let side_effect = SideEffect{
-        //     id:target, 
-        //     chain:ChainId::Polkadot, 
-        //     args,
-        // };
 
-        // let bounded_vec = BoundedVec
-// /*
-//    pub id:TargetId,
-//         pub chain:ChainId,
-//         args:BoundedArguments,
-//         test:T
 
-// */
-//         Ok(SideEffect {
-//             id:target,
-//             chain:ChainId::Polkadot,
-//             args: Zero::zero(),
-//             test:Zero::zero()
-    
-//         })
             Ok(())
 
         }
 
 
         #[pallet::weight(0)]
-        pub fn revert_side_effect(origin:OriginFor<T>) -> DispatchResult {
+        pub fn revert_side_effect(origin:OriginFor<T>,id:Vec<u8>) -> DispatchResult {
+            let  who = ensure_signed(origin)?; 
 
+            ensure!(SideEffectStorage::<T>::contains_key(&who, &id), Error::<T>::SideEffectDoesNotExist);
+
+            SideEffectStorage::<T>::remove(who.clone(),id.clone());
+
+
+            Self::deposit_event(Event::SideEffectReverted(who, id));
             Ok(())
+
+
         }
     }
 
 
   }
-
 
