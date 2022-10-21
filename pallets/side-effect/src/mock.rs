@@ -1,71 +1,126 @@
-#![cfg(test)]
+use crate as pallet_side_effect ; 
 
-use super::*;
-use frame_support::{
-    parameter_types,
-    traits::{ConstU128, ConstU32, ConstU64, Everything},
+use codec::{Decode, MaxEncodedLen, Encode};
+use frame_system as system ; 
+use scale_info::TypeInfo;
+use sp_core::{H256, Get};
+use frame_support::{traits::{ConstU16, ConstU64}, parameter_types};
+use sp_runtime::{
+
+	testing::Header, 
+	traits::{BlakeTwo256,IdentityLookup}
 };
-use sp_core::H256;
-use sp_runtime::{testing::Header, traits::IdentityLookup, AccountId32};
-
-pub type AccountId = AccountId32;
-impl frame_system::Config for Runtime {
-    type Origin = Origin;
-    type Call = Call;
-    type Index = u64;
-    type BlockNumber = u64;
-    type Hash = H256;
-    type Hashing = sp_runtime::traits::BlakeTwo256;
-    type AccountId = AccountId;
-    type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
-    type Event = Event;
-    type BlockHashCount = ConstU64<250>;
-    type BlockWeights = ();
-    type BlockLength = ();
-    type Version = ();
-    type PalletInfo = PalletInfo;
-    type AccountData = pallet_balances::AccountData<Balance>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type DbWeight = ();
-    type BaseCallFilter = Everything;
-    type SystemWeightInfo = ();
-    type SS58Prefix = ();
-    type OnSetCode = ();
-    type MaxConsumers = ConstU32<16>;
-}
-
-type Balance = u128;
 
 
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>; 
 
-impl super::Config for Runtime {
-    type Event = Event;
+type Block = frame_system::mocking::MockBlock<Test>;
 
-}
 
-pub type Block = sp_runtime::generic::Block<Header, UncheckedExtrinsic>;
-pub type UncheckedExtrinsic = sp_runtime::generic::UncheckedExtrinsic<u32, Call, u32, ()>;
 
 frame_support::construct_runtime!(
-    pub enum Runtime where
-    Block = Block,
-    NodeBlock = Block,
-    UncheckedExtrinsic = UncheckedExtrinsic
-    {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-     
-      SideEffects: crate::{Pallet, Storage, Event<T>}
-    }
-);
 
-pub fn new_test_ext() -> sp_io::TestExternalities {
-    let t = frame_system::GenesisConfig::default()
-        .build_storage::<Runtime>()
-        .unwrap();
+	pub enum Test where
+	Block =Block,
+	NodeBlock=Block, 
+	UncheckedExtrinsic=UncheckedExtrinsic
+	
+	{
+			System:frame_system,
+			SideEffects:pallet_side_effect,
 
-    let mut ext = sp_io::TestExternalities::new(t);
-    ext.execute_with(|| System::set_block_number(1));
-    ext
+	}
+); 
+
+
+
+impl system::Config for Test {
+	type BaseCallFilter = frame_support::traits::Everything;
+	type BlockWeights = ();
+	type BlockLength = ();
+	type DbWeight = ();
+	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeCall = RuntimeCall;
+	type Index = u64;
+	type BlockNumber = u64;
+	type Hash = H256;
+	type Hashing = BlakeTwo256;
+	type AccountId = u64;
+	type Lookup = IdentityLookup<Self::AccountId>;
+	type Header = Header;
+	type RuntimeEvent = RuntimeEvent;
+	type BlockHashCount = ConstU64<250>;
+	type Version = ();
+	type PalletInfo = PalletInfo;
+	type AccountData = ();
+	type OnNewAccount = ();
+	type OnKilledAccount = ();
+	type SystemWeightInfo = ();
+	type SS58Prefix = ConstU16<42>;
+	type OnSetCode = ();
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
+
+
+
+parameter_types! {
+
+	const StringLimit:u32 = 5; 
+  
+
+
+}
+
+
+
+// pub type TypeHasher = sp_core::Hasher::hash<TypeHash>;
+
+#[derive(Debug,Default,Encode,Decode,TypeInfo,MaxEncodedLen,PartialEq, Eq)]
+pub struct Slimit ; 
+
+impl Get<u32> for Slimit {
+    fn get() -> u32 {
+        5
+    }
+}
+
+
+impl pallet_side_effect::Config for Test {
+
+	type RuntimeEvent =  RuntimeEvent;
+
+	type StringLimit = Slimit;
+
+
+
+}
+
+
+
+pub struct Extuilder ; 
+
+
+impl Default for Extuilder {
+
+	fn default() -> Self {
+		Self
+	}
+}
+
+
+
+impl Extuilder {
+
+pub	fn build(self) -> sp_io::TestExternalities {
+
+		let mut t = system::GenesisConfig::default().build_storage::<Test>().unwrap(); 
+		let mut  ext = sp_io::TestExternalities::new(t); 
+
+		ext.execute_with(|| System::set_block_number(1));
+
+		ext
+
+	}
+}
+
+
