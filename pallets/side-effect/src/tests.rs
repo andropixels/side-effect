@@ -49,23 +49,6 @@ assert_eq!(
 
 
 
-#[test]
-
-fn print_date(){
-
-    let from: AccountId32 = AccountId32::new([1u8; 32]);
-    let to: AccountId32 = AccountId32::new([2u8; 32]);
-    let value: BalanceOf = 1u128;
-    let target = *b"ksma";
-
-    let encode_args = vec![target.encode(),from.encode(),to.encode(),value.encode()].encode(); 
-
-    println!("{:?}",encode_args);
-
-    let sn:SideEffectInterface<Slimit> = SideEffectInterface::try_from(encode_args).unwrap(); 
-
-
-}
 
 
 #[test]
