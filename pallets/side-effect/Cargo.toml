@@ -22,17 +22,21 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkad
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30", default-features = false }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30", default-features = false }
 frame-benchmarking = {  default-features = false, optional = true,  git = "https://github.com/paritytech/substrate",  branch = "polkadot-v0.9.30" }
-
-bytes = "1.2.1"
-serde = "1.0.145"
-serde_derive = "1.0.145"
-num = "0.4.0"
-
-
+bytes = { version = "1.2.1", default-features = false }
+serde = { default-features = false, version = "1.0.147", optional = true, features = [ "derive" ] }
 
 
 [features]
 default = ["std"]
-std = ["codec/std","frame-benchmarking?/std", "frame-support/std", "frame-system/std", "scale-info/std"]
+std = [
+	"codec/std",
+	"frame-benchmarking?/std",
+	"frame-support/std",
+	"frame-system/std",
+	"scale-info/std",
+    "serde/std",
+    "bytes/std"
+
+]
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
 try-runtime = ["frame-support/try-runtime"]

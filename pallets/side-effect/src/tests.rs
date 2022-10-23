@@ -28,13 +28,6 @@ macro_rules! bvec {
 
 #[test]
 
-fn commit_side_effect_works() {
-
-
-}
-
-#[test]
-
 fn creates_empty_side_effect() {
 
 let default_side_effect = SideEffectInterface::<Slimit>{
@@ -66,6 +59,8 @@ fn print_date(){
     let target = *b"ksma";
 
     let encode_args = vec![target.encode(),from.encode(),to.encode(),value.encode()].encode(); 
+
+    println!("{:?}",encode_args);
 
     let sn:SideEffectInterface<Slimit> = SideEffectInterface::try_from(encode_args).unwrap(); 
 

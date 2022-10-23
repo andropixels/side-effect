@@ -1,8 +1,14 @@
 
-
 #![cfg_attr(not(feature = "std"), no_std)]
 
 // pub use frame_system::pallet::*; 
+use frame_support::inherent::Vec;
+
+//     use frame_support::inherent::Vec;
+
+//      use scale_info::prelude::vec::Vec;
+
+//    use sp_std::vec::Vec;
 
 
 #[cfg(test)]
@@ -12,20 +18,25 @@ mod mock;
 mod tests;
 
 pub mod types {
+    use scale_info::{
+        prelude::{fmt::Debug, vec, vec::Vec},
 
+    };
     use codec::{Decode, Encode};
     use frame_support::traits::Currency;
     use frame_support::traits::tokens::Balance;
     use frame_support::{pallet_prelude::MaxEncodedLen, BoundedVec};
     use frame_system::Config;
     use scale_info::prelude::collections::VecDeque;
-    use num::Zero; 
+    // use num::Zero; 
     use scale_info::TypeInfo;
     use sp_core::Get;
     use sp_runtime::RuntimeDebug;
     use sp_core::crypto::AccountId32;
 
-    use crate::pallet::Config as PalletConfig;
+    #[cfg(feature = "std")]
+    use serde::{Deserialize, Serialize};
+    
 
     type SideEffectName = Vec<u8>; 
     pub type TargetId = [u8; 4];
@@ -58,7 +69,7 @@ impl<S:Get<u32>> Default for SideEffectInterface<S> {
 
 fn default() -> Self {
     let id:TargetId = [1,0,0,1]; 
-    let args = BoundedVec::default(); 
+    let args:BoundedVec<Vec<Vec<u8>>, S> = BoundedVec::default(); 
     Self { id, chain:ChainId::Polkadot, args }
 }
 
@@ -125,7 +136,9 @@ impl TryInto<TargetId> for TargetByte {
 
 
 
-    #[derive(Encode,Decode, Clone,PartialEq,Eq,Default,MaxEncodedLen,RuntimeDebug, scale_info::TypeInfo,serde::Serialize,serde::Deserialize)]
+#[derive(Encode,Decode, Clone,PartialEq,Eq,Default,MaxEncodedLen,RuntimeDebug, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+
 
     pub enum ChainId {
         #[default]
@@ -251,6 +264,7 @@ pub fn extract_args<
     use frame_support::{pallet_prelude::{*, OptionQuery, ValueQuery, StorageValue, StorageDoubleMap}, Blake2_128Concat, Blake2_128,debug};
 	use frame_system::pallet_prelude::*;
     pub type SystemHashing<T> = <T as frame_system::Config>::Hashing;
+    use sp_std::vec::Vec;
 
     use frame_support::{pallet_prelude::MaxEncodedLen, BoundedVec};
     use scale_info::TypeInfo;

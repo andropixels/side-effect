@@ -1,10 +1,16 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
+
+// use std::env::SplitPaths;
+use sp_core::Get;
+use codec::{Decode, MaxEncodedLen, Encode};
+use scale_info::TypeInfo;
 
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
@@ -47,6 +53,8 @@ pub use sp_runtime::{Perbill, Permill};
 
 /// Import the template pallet.
 pub use pallet_template;
+
+pub use pallet_side_effect; 
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -235,6 +243,27 @@ impl pallet_timestamp::Config for Runtime {
 	type WeightInfo = ();
 }
 
+
+
+#[derive(Debug,Default,Encode,Decode,TypeInfo,MaxEncodedLen,PartialEq, Eq)]
+pub struct Slimit ; 
+
+impl Get<u32> for Slimit {
+    fn get() -> u32 {
+        5
+    }
+}
+
+
+
+impl pallet_side_effect::Config for Runtime {
+type RuntimeEvent = RuntimeEvent;
+type StringLimit = Slimit;
+
+}
+
+
+
 /// Existential deposit.
 pub const EXISTENTIAL_DEPOSIT: u128 = 500;
 
@@ -293,6 +322,7 @@ construct_runtime!(
 		Sudo: pallet_sudo,
 		// Include the custom logic from the pallet-template in the runtime.
 		TemplateModule: pallet_template,
+		SideEffects:pallet_side_effect,
 	}
 );
 
