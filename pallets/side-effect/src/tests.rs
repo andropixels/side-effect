@@ -27,57 +27,6 @@ pub type SystemHash = <Test as frame_system::Config>::Hashing;
 
 
 #[test]
-fn print_data() {
-    // let from: AccountId32 = AccountId32::new([1u8; 32]);
-    // let to: AccountId32 = AccountId32::new([2u8; 32]);
-    // let value: BalanceOf = 1u128;
-    // let target = *b"ksma";
-
-    // let encode_args = vec![target.encode(),from.encode(),to.encode(),value.encode()].encode(); 
-
-
-
-    
-    
-     let from: AccountId32 = AccountId32::new([1u8; 32]);
-        let to: AccountId32 = AccountId32::new([2u8; 32]);
-        let value: BalanceOf = 1u128;
-        let target = *b"ksma";
-
-        let encode_args = vec![target.encode(),from.encode(),to.encode(),value.encode()].encode(); 
-     assert_ok!(SideEffects::commit_side_effect(RuntimeOrigin::signed(1), encode_args))    ;
-
-
-    
-
-
-
-
-    // let sn:SideEffectInterface<Slimit> = SideEffectInterface::try_from(encode_args).unwrap(); 
-    // let id = sn.generate_id::<SystemHash>(); 
-
-    // let id_to_vec = id.as_ref().to_vec(); 
-
-    // println!("{:?}", id_to_vec);
-
-
-//[85, 40, 2, 119, 72, 156, 211, 80, 75, 167, 131, 127, 5, 239, 79, 158, 34, 233, 135, 104, 243, 13, 91, 147, 88, 120, 20, 31, 65, 165, 99, 243]
-
-    // assert_ok!(SideEffects::commit_side_effect(RuntimeOrigin::signed(1), encode_args))    ;
-
-// let id = vec![85, 40, 2, 119, 72, 156, 211, 80, 75, 167, 131, 127, 5, 239, 79, 158, 34, 233, 135, 104, 243, 13, 91, 147, 88, 120, 20, 31, 65, 165, 99, 243];
-//     assert_ok!(SideEffects::revert_side_effect(RuntimeOrigin::signed(1), id)); 
-
-
-
-
-
-
-
-}
-
-
-#[test]
 
 fn creates_empty_side_effect() {
 
