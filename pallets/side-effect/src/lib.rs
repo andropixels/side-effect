@@ -17,6 +17,8 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+mod benchmarking;
+
 pub mod types {
     use scale_info::{
         prelude::{fmt::Debug, vec, vec::Vec},
