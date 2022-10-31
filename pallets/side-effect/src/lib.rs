@@ -20,12 +20,11 @@ pub mod types {
 
     };
     use codec::{Decode, Encode};
-    use frame_support::traits::Currency;
-    use frame_support::traits::tokens::Balance;
+
     use frame_support::{pallet_prelude::MaxEncodedLen, BoundedVec};
-    use frame_system::Config;
+    
     use scale_info::prelude::collections::VecDeque;
-    // use num::Zero; 
+    
     use scale_info::TypeInfo;
     use sp_core::Get;
     use sp_runtime::RuntimeDebug;
@@ -251,12 +250,15 @@ pub fn extract_args<
   }
 
   pub use pallet::*;
+  pub mod weights;
 
 
   use types::*;
 
   #[frame_support::pallet] 
   pub mod pallet {
+	use crate::weights::WeightInfo;
+
     use codec::{Encode, Decode, EncodeLike};
     use frame_support::{pallet_prelude::{*, OptionQuery, ValueQuery, StorageValue, StorageDoubleMap}, Blake2_128Concat, Blake2_128,debug};
 	use frame_system::pallet_prelude::*;
@@ -278,15 +280,13 @@ pub fn extract_args<
         type StringLimit:Get<u32> +Encode +Decode + TypeInfo + MaxEncodedLen +Default; 
    
         
+		type WeightInfo: WeightInfo;
         
         
 
 
     }
 
-//   pub  type BalanceOf<T:Config> = <<T as Config>::PCurrency as Currency<<T as frame_system::Config>::AccountId>>::Balance ; 
-
-//   pub type SideEffectOf<T> = SideEffectInterface<<T as Config>::StringLimit>; 
 
 
 
@@ -312,6 +312,7 @@ pub type SideEffectInterfaceOf<T> = SideEffectInterface<<T as Config>::StringLim
 
         /// if the sideEffect is already commited
         SideEffectAlreadyPresent,
+        /// sideEffect Does Not Exist 
         SideEffectDoesNotExist,
     }
 
@@ -328,8 +329,9 @@ pub type SideEffectStorage<T:Config > = StorageDoubleMap<_,Blake2_128,T::Account
     #[pallet::call]
     impl<T:Config > Pallet<T> {
 
+		#[pallet::weight(T::WeightInfo::commit_side_effect())]
 
-        #[pallet::weight(0)]
+        
         pub fn commit_side_effect(origin:OriginFor<T>,value:Vec<u8>) -> DispatchResult{
             let  who = ensure_signed(origin)?; 
 
@@ -356,7 +358,8 @@ pub type SideEffectStorage<T:Config > = StorageDoubleMap<_,Blake2_128,T::Account
         }
 
 
-        #[pallet::weight(0)]
+        #[pallet::weight(T::WeightInfo::revert_side_effect())]
+
         pub fn revert_side_effect(origin:OriginFor<T>,id:Vec<u8>) -> DispatchResult {
             let  who = ensure_signed(origin)?; 
 

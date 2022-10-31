@@ -1,4 +1,4 @@
-use crate as pallet_side_effect ; 
+use crate::{self as pallet_side_effect, weights::SubstrateWeight} ; 
 
 use codec::{Decode, MaxEncodedLen, Encode};
 use frame_system as system ; 
@@ -90,6 +90,8 @@ impl pallet_side_effect::Config for Test {
 	type RuntimeEvent =  RuntimeEvent;
 
 	type StringLimit = Slimit;
+	type WeightInfo = SubstrateWeight<Test>;
+
 
 
 

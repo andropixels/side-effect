@@ -7,6 +7,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use pallet_side_effect::weights::SubstrateWeight;
 // use std::env::SplitPaths;
 use sp_core::Get;
 use codec::{Decode, MaxEncodedLen, Encode};
@@ -259,6 +260,7 @@ impl Get<u32> for Slimit {
 impl pallet_side_effect::Config for Runtime {
 type RuntimeEvent = RuntimeEvent;
 type StringLimit = Slimit;
+type WeightInfo = SubstrateWeight<Runtime>;
 
 }
 
@@ -370,6 +372,7 @@ mod benches {
 		[pallet_balances, Balances]
 		[pallet_timestamp, Timestamp]
 		[pallet_template, TemplateModule]
+		[pallet_side_effect, SideEffects]
 	);
 }
 
